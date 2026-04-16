@@ -70,18 +70,34 @@ class DanbooruExtension extends Minz_Extension {
 				curl_setopt($ch, CURLOPT_FRESH_CONNECT,true);
 				$responseJSON = curl_exec($ch);
 
+				$copySourceHtml = "";
+
 				$response = json_decode($responseJSON, true)[0];
 				if (empty($response["translated_description"])) {
 					$comment = "<h2>" . $response["original_title"] . "</h2><p>" . $response["original_description"] . "</p>";
 				} else {
 					$comment = "<h2 alt='Translated Title'>" . $response["translated_title"] . "</h2><p>" . $response["translated_description"] . "</p>";
 				}
+				$source = $response["source"] ?? '';
+
+				$safeSource = htmlspecialchars($source, ENT_QUOTES, 'UTF-8');
+				$copySourceHtml = "
+					<div style='margin-top: 10px; margin-bottom: 10px;'>
+						<button
+						data-source={'$safeSource'}
+						onclick=\"navigator.clipboard.writeText(this.getAttribute('data-source'));
+						this.innerText='Copied!';
+						setTimeout(() => this.innerText='Copy Source', 2000);\"
+						style='cursor: pointer; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>
+							Copy Source
+						<\button>
+				"
 			}
 		}
 
 		// Make the new post
 		$originalHash = $entry->hash();
-		$entry->_content($content . $comment);
+		$entry->_content($content . $copySourceHtml . $comment);
 		$entry->_hash($originalHash);
 
 		return $entry;
